@@ -1,0 +1,71 @@
+void dividirNo(No* noPai, int i, No* noFilho) {
+    No* novoNo = criarNo();
+    int noMeio = noFilho->chaves[ORDEM - 1];
+
+    for (int j = 0; j < ORDEM - 1; j++) {
+        novoNo->chaves[j] = noFilho->chaves[j + ORDEM];
+    }
+
+    if (noFilho->filhos[0] != NULL) {
+        for (int j = 0; j < ORDEM; j++) {
+            novoNo->filhos[j] = noFilho->filhos[j + ORDEM];
+            novoNo->filhos[j]->pai = novoNo;
+        }
+    }
+
+    noFilho->total = ORDEM - 1;
+    novoNo->total = ORDEM - 1;
+
+    for (int j = noPai->total; j > i; j--) {
+        noPai->filhos[j + 1] = noPai->filhos[j];
+    }
+
+    noPai->filhos[i + 1] = novoNo;
+    novoNo->pai = noPai;
+
+    for (int j = noPai->total - 1; j >= i; j--) {
+        noPai->chaves[j + 1] = noPai->chaves[j];
+    }
+    noPai->chaves[i] = noMeio;
+    noPai->total++;
+}
+
+void inserirNaoCheio(No* no, int chave) {
+    int i = no->total - 1;
+
+    if (no->filhos[0] == NULL) {
+        while (i >= 0 && chave < no->chaves[i]) {
+            no->chaves[i + 1] = no->chaves[i];
+            i--;
+        }
+        no->chaves[i + 1] = chave;
+        no->total++;
+    } else {
+        while (i >= 0 && chave < no->chaves[i]) {
+            i--;
+        }
+        i++;
+
+        if (no->filhos[i]->total == 2 * ORDEM - 1) {
+            dividirNo(no, i, no->filhos[i]);
+
+            if (chave > no->chaves[i]) {
+                i++;
+            }
+        }
+
+        inserirNaoCheio(no->filhos[i], chave);
+    }
+}
+
+void inserir(No* raiz, int chave) {
+    if (raiz->total == 2 * ORDEM - 1) {
+
+        No* novoNo = criarNo();
+        novoNo->filhos[0] = raiz;
+        raiz->pai = novoNo;
+        dividirNo(novoNo, 0, raiz);
+        raiz = novoNo;
+    }
+    inserirNaoCheio(raiz, chave);
+}
