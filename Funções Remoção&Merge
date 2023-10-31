@@ -1,0 +1,83 @@
+void fundirNo(No* pai, int indiceFilho) {
+    No* noEsquerda = pai->filhos[indiceFilho];
+    No* noDireita = pai->filhos[indiceFilho + 1];
+
+    noEsquerda->chaves[ORDEM - 1] = pai->chaves[indiceFilho];
+    noEsquerda->total++;
+
+    for (int i = 0; i < noDireita->total; i++) {
+        noEsquerda->chaves[ORDEM + i] = noDireita->chaves[i];
+        noEsquerda->total++;
+    }
+
+    for (int i = 0; i <= noDireita->total; i++) {
+        noEsquerda->filhos[ORDEM + i] = noDireita->filhos[i];
+        if (noEsquerda->filhos[ORDEM + i] != NULL) {
+            noEsquerda->filhos[ORDEM + i]->pai = noEsquerda;
+        }
+    }
+
+    for (int i = indiceFilho; i < pai->total - 1; i++) {
+        pai->chaves[i] = pai->chaves[i + 1];
+        pai->filhos[i + 1] = pai->filhos[i + 2];
+    }
+    pai->total--;
+
+    free(noDireita);
+}
+
+void redistribuirChaves(No* pai, int indiceFilho, int indiceVizinho, No* noAtual, No* noVizinho) {
+    if (indiceFilho < indiceVizinho) {
+        noAtual->chaves[ORDEM - 1] = pai->chaves[indiceFilho];
+        noAtual->total++;
+        pai->chaves[indiceFilho] = noVizinho->chaves[0];
+
+        for (int i = 0; i < noVizinho->total - 1; i++) {
+            noVizinho->chaves[i] = noVizinho->chaves[i + 1];
+        }
+        noVizinho->total--;
+    } else {
+        for (int i = noAtual->total; i > 0; i--) {
+            noAtual->chaves[i] = noAtual->chaves[i - 1];
+        }
+        noAtual->total++;
+        noAtual->chaves[0] = pai->chaves[indiceFilho - 1];
+        pai->chaves[indiceFilho - 1] = noVizinho->chaves[noVizinho->total - 1];
+        noVizinho->total--;
+    }
+}
+
+void remover(No* no, int chave) {
+    int i = 0;
+    while (i < no->total && chave > no->chaves[i]) {
+        i++;
+    }
+
+    if (i < no->total && chave == no->chaves[i]) {
+        for (int j = i; j < no->total - 1; j++) {
+            no->chaves[j] = no->chaves[j + 1];
+        }
+        no->total--;
+    } else if (no->filhos[i] != NULL) {
+        remover(no->filhos[i], chave);
+
+        if (no->filhos[i]->total < ORDEM - 1) {
+            No* pai = no;
+            int indiceFilho = i;
+
+            while (indiceFilho <= pai->total && pai->filhos[indiceFilho] != no->filhos[i]) {
+                indiceFilho++;
+            }
+
+            if (indiceFilho > 0 && pai->filhos[indiceFilho - 1]->total > ORDEM - 1) {
+                redistribuirChaves(pai, indiceFilho, indiceFilho - 1, no->filhos[i], pai->filhos[indiceFilho - 1]);
+            } else if (indiceFilho < pai->total && pai->filhos[indiceFilho + 1]->total > ORDEM - 1) {
+                redistribuirChaves(pai, indiceFilho, indiceFilho + 1, no->filhos[i], pai->filhos[indiceFilho + 1]);
+            } else if (indiceFilho > 0) {
+                fundirNo(pai, indiceFilho - 1);
+            } else {
+                fundirNo(pai, indiceFilho);
+            }
+        }
+    }
+}
